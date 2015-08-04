@@ -2,18 +2,19 @@ module Lita
   module Handlers
     class GithubPinger < Handler
 
-      config :enginners, type: Array, required: true
+      config :engineers, type: Array, required: true
 
-      route(/assigned to (.*)\)/, :detect_comment, command: false)
+      route(/@(\w*)/, :detect_comment, command: false)
 
       def detect_comment(message)
         log(message.user.metadata["name"] + " was detected as a github bot")
+
         return unless message.user.metadata["name"] == "github"
-        pr_owner = message.matches[0][0]
+        mentioned_username = message.matches[0][0]
 
         # side effects intentional
         found = config.engineers.any? do |eng|
-          message.reply("@" + eng[:slack]) if eng[:github] == pr_owner
+          message.reply("@" + eng[:slack]) if eng[:github] == mentioned_username
         end
 
         unless found
