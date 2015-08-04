@@ -1,6 +1,9 @@
 module Lita
   module Handlers
     class GithubPinger < Handler
+
+      config :enginners, type: Array, required: true
+
       route(/assigned to (.*)\)/, :detect_comment, command: false)
 
       def detect_comment(message)
