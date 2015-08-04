@@ -7,9 +7,7 @@ module Lita
       route(/@(\w*)/, :detect_comment, command: false)
 
       def detect_comment(message)
-        puts message.user.metadata + " was detected as a github bot"
-
-        return unless message.user.metadata["name"] == "github"
+        return unless message.user.metadata["name"] == "" # Integrations don't have names
         mentioned_username = message.matches[0][0]
 
         # side effects intentional
