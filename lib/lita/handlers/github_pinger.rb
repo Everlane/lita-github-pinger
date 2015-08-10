@@ -9,7 +9,7 @@ module Lita
       http.post "/ghping", :ghping
 
       def ghping(request, response)
-        body = MultiJson.parse(request.body)
+        body = MultiJson.load(request.body)
 
         if body["events"].include?("pull_request_review_comment")
           send_dm("taylor", "Pull Request Comment: ```#{body}```")
