@@ -12,7 +12,7 @@ module Lita
         body = MultiJson.load(request.body)
         p body
 
-        if body["events"].include?("pull_request_review_comment")
+        if body["hook"]["events"].include?("pull_request_review_comment")
           send_dm("taylor", "Pull Request Comment: ```#{body}```")
         else
           send_dm("taylor", "Pull Request Event: ```#{body}```")
