@@ -30,7 +30,7 @@ module Lita
       def send_dm(username, content)
         if user = Lita::User.fuzzy_find(username)
           source = Lita::Source.new(user: user)
-          robot.send_message(source, "New PR comment! #{message.message.body}")
+          robot.send_message(source, "New PR comment! #{content}")
         else
           puts "Could not find user with name #{username}"
         end
