@@ -10,6 +10,7 @@ module Lita
 
       def ghping(request, response)
         body = MultiJson.load(request.body)
+        p body
 
         if body["events"].include?("pull_request_review_comment")
           send_dm("taylor", "Pull Request Comment: ```#{body}```")
@@ -27,7 +28,7 @@ module Lita
       end
 
       def send_dm(username, content)
-        if user = Lita::User.fuzzy_find(eng[:slack])
+        if user = Lita::User.fuzzy_find(username)
           source = Lita::Source.new(user: user)
           robot.send_message(source, "New PR comment! #{message.message.body}")
         else
