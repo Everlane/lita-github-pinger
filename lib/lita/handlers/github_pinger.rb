@@ -10,7 +10,6 @@ module Lita
 
       def ghping(request, response)
         body = MultiJson.load(request.body)
-        pp body
         send_dm("taylor", "```#{body}```")
         response
       end
