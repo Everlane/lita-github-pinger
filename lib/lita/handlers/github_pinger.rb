@@ -13,7 +13,7 @@ module Lita
         # side effects intentional
         found = config.engineers.any? do |eng|
           if eng[:github] == mentioned_username
-            user = Lita::User.fuzzy_find(engineer[:slack])
+            user = Lita::User.fuzzy_find(eng[:slack])
             puts "%%%%%%%%%%%%%%%%%%%%%%%%%%%"
             p user
             if user
