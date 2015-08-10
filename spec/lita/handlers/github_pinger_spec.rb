@@ -49,7 +49,7 @@ Comment by thenanyu
 @taylorlapeyre hai
 })
     expect(replies.last).to eq %q{taylor, you were mentioned by thenanyu:
-  http://github.com/everlane/everlane.com/pulls/1137
+  http://github.com/everlane/everlane.com/pull/1137
   > @taylorlapeyre hai
 }
   end

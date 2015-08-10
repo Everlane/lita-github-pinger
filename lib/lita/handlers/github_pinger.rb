@@ -23,10 +23,12 @@ module Lita
         config.engineers.each do |engineer|
           if engineer[:github] == mentioned_username
             content = %Q{#{engineer[:slack]}, you were mentioned by #{comment_author}:
-  http://github.com/everlane/everlane.com/pulls/#{pr_id}
+  http://github.com/everlane/everlane.com/pull/#{pr_id}
   > #{comment_text}
 }
             message.reply(content)
+            user = Lita::User.find_by_name(engineer[:slack])
+            robot.send_message(user, content)
           end
         end
       end
