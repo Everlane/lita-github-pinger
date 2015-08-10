@@ -7,6 +7,11 @@ module Lita
       config :engineers, type: Array, required: true
 
       route(GITHUB_PR_COMMENT_REGEX, :detect_comment, command: false)
+      route(/testing/, :see_what_happens, command: false)
+
+      def see_what_happens(message)
+        message.reply message.message.body
+      end
 
       def detect_comment(message)
         pr_id,
