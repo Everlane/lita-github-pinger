@@ -6,13 +6,24 @@ module Lita
 
       route(/@(\w*)/, :detect_comment, command: false)
 
-      http.get "/ghping", :ghping
+      http.post "/ghping", :ghping
 
       def ghping(request, response)
+        body = MultiJson.parse(request.body)
+
+        if body["events"].include?("pull_request_review_comment")
+          send_dm("taylor", "Pull Request Comment: ```#{body}```")
+        else
+          send_dm("taylor", "Pull Request Event: ```#{body}```")
+        end
+
+        response
+      end
+
+      def alert_eng_pr(message)
         room = Lita::Room.fuzzy_find("eng")
         source = Lita::Source.new(room: room)
-        robot.send_message(source, "I just got pinged at /ghping!")
-        response.body << "Hello, #{request.user_agent}!"
+        robot.send_message(source, message)
       end
 
       def send_dm(username, content)
