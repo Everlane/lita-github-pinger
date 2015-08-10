@@ -10,7 +10,28 @@ module Lita
 
       def ghping(request, response)
         body = MultiJson.load(request.body)
-        send_dm("taylor", "```#{body}```")
+
+        if body["comment"]
+          pr_url = body["pull_request"]["html_url"]
+          pr_owner = body["pull_request"]["user"]["login"]
+          commenter = body["content"]["user"]["login"]
+          comment = body["comment"]["body"]
+
+          pr_owner = config.engineers.select do |eng|
+            eng[:github] == pr_owner
+          end.first[:slack]
+
+          commenter = config.engineers.select do |eng|
+            eng[:github] == commenter
+          end.first[:slack]
+
+          message  = "(to #{pr_owner}) New PR comment from #{commenter}:\n"
+          message += "#{pr_url}\n> #{comment}"
+
+          send_dm("taylor", message)
+        end
+
+
         response
       end
 
