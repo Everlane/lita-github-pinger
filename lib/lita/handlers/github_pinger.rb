@@ -6,28 +6,47 @@ module Lita
 
       route(/@(\w*)/, :detect_comment, command: false)
 
+      http.get "/ghping", :ghping
+
+      def ghping(request, response)
+        room = Lita::Room.fuzzy_find("eng")
+        source = Lita::Source.new(room: room)
+        robot.send_message(source, "I just got pinged at /ghping!")
+        response.body << "Hello, #{request.user_agent}!"
+      end
+
+      def send_dm(username, content)
+        if user = Lita::User.fuzzy_find(eng[:slack])
+          source = Lita::Source.new(user: user)
+          robot.send_message(source, "New PR comment! #{message.message.body}")
+        else
+          puts "Could not find user with name #{username}"
+        end
+      end
+
       def detect_comment(message)
         return unless message.user.metadata["name"] == "" # Integrations don't have names
         mentioned_username = message.matches[0][0]
 
-        # side effects intentional
-        found = config.engineers.any? do |eng|
+        config.engineers.each do |eng|
           if eng[:github] == mentioned_username
-            user = Lita::User.fuzzy_find(eng[:slack])
-            puts "%%%%%%%%%%%%%%%%%%%%%%%%%%%"
-            p user
-            if user
-              source = Lita::Source.new(user: user)
-              robot.send_message(source, "New PR comment! #{message.message.body}")
-            else
+
+            case eng[:preference]
+            when "dm"
+              send_dm(eng[:slack], message.message.body)
+            when "eng_pr", "eng-pr"
               message.reply(eng[:slack] + ": " + message.message.body)
+            when "off"
+              return
+            else
+              send_dm(eng[:slack], message.message.body)
             end
+
+            return
           end
         end
 
-        unless found
-          message.reply("Could not find a slack username for #{pr_owner}. Please configure everbot to include this username.")
-        end
+        message.reply("Could not find a slack username for #{mentioned_username}. Please configure everbot to include this username.")
       end
     end
 
