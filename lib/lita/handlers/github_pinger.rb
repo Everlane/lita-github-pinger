@@ -14,8 +14,11 @@ module Lita
         found = config.engineers.any? do |eng|
           if eng[:github] == mentioned_username
             user = Lita::User.fuzzy_find(engineer[:slack])
+            puts "%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+            p user
             if user
-              robot.send_message(user, "New PR comment! #{message.message.body}")
+              source = Lita::Source.new(user: user)
+              robot.send_message(source, "New PR comment! #{message.message.body}")
             else
               message.reply(eng[:slack] + ": " + message.message.body)
             end
