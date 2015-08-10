@@ -13,8 +13,12 @@ module Lita
         # side effects intentional
         found = config.engineers.any? do |eng|
           if eng[:github] == mentioned_username
-            user = Lita::User.find_by_name(engineer[:slack])
-            robot.send_message(user, "New PR comment! #{message.message.body}")
+            user = Lita::User.fuzzy_find(engineer[:slack])
+            if user
+              robot.send_message(user, "New PR comment! #{message.message.body}")
+            else
+              message.reply(eng[:slack] + ": " + message.message.body)
+            end
           end
         end
 
