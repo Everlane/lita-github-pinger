@@ -14,7 +14,7 @@ module Lita
         if body["comment"]
           pr_url = body["pull_request"]["html_url"]
           pr_owner = body["pull_request"]["user"]["login"]
-          commenter = body["content"]["user"]["login"]
+          commenter = body["comment"]["user"]["login"]
           comment = body["comment"]["body"]
 
           pr_owner = config.engineers.select do |eng|
