@@ -35,7 +35,8 @@ module Lita
 
             pref = find_engineer(slack: user)[:preference]
             case pref
-            when "off" return
+            when "off"
+              return
             when "dm", nil
               private_message  = "New PR comment from @#{commenter}:\n"
               private_message += "#{pr_url}\n#{comment}"
