@@ -15,7 +15,7 @@ module Lita
           pr_url = body["pull_request"]["html_url"]
           pr_owner = body["pull_request"]["user"]["login"]
           commenter = body["comment"]["user"]["login"]
-          comment = body["comment"]["body"]
+          comment = body["comment"]["body"].split("\n").join("\n >")
 
           pr_owner = config.engineers.select do |eng|
             eng[:github] == pr_owner
@@ -25,10 +25,10 @@ module Lita
             eng[:github] == commenter
           end.first[:slack]
 
-          message  = "(to #{pr_owner}) New PR comment from #{commenter}:\n"
+          message  = "New PR comment from #{commenter}:\n"
           message += "#{pr_url}\n> #{comment}"
 
-          send_dm("taylor", message)
+          send_dm(pr_owner, message)
         end
 
 
