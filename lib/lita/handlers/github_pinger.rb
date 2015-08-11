@@ -8,13 +8,8 @@ module Lita
 
       def ghping(request, response)
 
-        puts "######################################"
-        puts "GitHub hook received. Parsing body... "
-
+        puts "########## New GH PR Event! ##########"
         body = MultiJson.load(request.body)
-
-        print "Done."
-        puts "######################################"
 
         if body["comment"]
           puts "Detected a comment. Extracting data... "
@@ -45,7 +40,7 @@ module Lita
 
             # get each @mentioned username in the comment
             mentions = comment.split("@")[1..-1].map { |snip| snip.split(" ").first }
-            print "Done. (Got #{mentions})"
+            puts "Done. (Got #{mentions})"
 
             # add them to the list of usernames to ping
             usernames_to_ping = usernames_to_ping.concat(mentions).uniq
@@ -57,7 +52,7 @@ module Lita
           # slackify all of the users
           usernames_to_ping.map! { |user| github_to_slack_username(user) }
 
-          print "Done. (Got #{usernames_to_ping})"
+          puts "Done. (Got #{usernames_to_ping})"
 
           puts "Starting pinging process for each engineer..."
           usernames_to_ping.compact.each do |user|
@@ -112,7 +107,7 @@ module Lita
         if user = Lita::User.fuzzy_find(username)
           source = Lita::Source.new(user: user)
           robot.send_message(source, content)
-          print "Done."
+          puts "Done."
         else
           alert_eng_pr("Could not find user with name #{username}, please configure everbot.")
         end
