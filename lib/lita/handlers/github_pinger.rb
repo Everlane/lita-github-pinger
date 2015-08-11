@@ -13,7 +13,7 @@ module Lita
           thing     = body["pull_request"] || body["issue"]
           pr_url    = thing["html_url"]
           comment   = body["comment"]["body"]
-          commenter = body["comment"]["user"]["login"]
+          commenter = github_to_slack_username(body["comment"]["user"]["login"])
 
           # automatically include the creator of the PR
           usernames_to_ping = [thing["user"]["login"]]
@@ -27,30 +27,49 @@ module Lita
             usernames_to_ping = usernames_to_ping.concat(mentions).uniq
 
             # slackify all of the users
-            usernames_to_ping.map! { |user| github_username_to_slack_username(user) }
+            usernames_to_ping.map! { |user| github_to_slack_username(user) }
           end
 
-          message  = "New PR comment from #{commenter}:\n"
-          message += "#{pr_url}\n#{comment}"
-
           puts "Got a comment on something, sending messages to #{usernames_to_ping}"
+          usernames_to_ping.each do |user|
 
-          usernames_to_ping.each { |user| send_dm(user, message) }
+            pref = find_engineer(slack: user)[:preference]
+            case pref
+            when "off" return
+            when "dm", nil
+              private_message  = "New PR comment from @#{commenter}:\n"
+              private_message += "#{pr_url}\n#{comment}"
+              send_dm(user, private_message)
+            when "eng-pr", "eng_pr"
+              public_message  = "@#{user}, new PR mention: "
+              public_message += "#{pr_url}\n#{comment}" if user == usernames_to_ping.last
+              alert_eng_pr(public_message)
+            end
+
+          end
         end
 
         response
       end
 
       def alert_eng_pr(message)
-        room = Lita::Room.fuzzy_find("eng")
+        room = Lita::Room.fuzzy_find("eng-pr")
         source = Lita::Source.new(room: room)
         robot.send_message(source, message)
       end
 
-      def github_username_to_slack_username(github_username)
+      def find_engineer(slack: nil, github: nil)
         config.engineers.select do |eng|
-          eng[:github] == github_username
-        end.first[:slack]
+          if slack
+            eng[:github] == slack
+          elsif github
+            eng[:github] == github
+          end
+        end.first
+      end
+
+      def github_to_slack_username(github_username)
+        find_engineer(github: github_username)[:slack]
       end
 
       def send_dm(username, content)
@@ -58,7 +77,7 @@ module Lita
           source = Lita::Source.new(user: user)
           robot.send_message(source, content)
         else
-          puts "Could not find user with name #{username}"
+          alert_eng_pr("Could not find user with name #{username}, please configure everbot.")
         end
       end
     end
