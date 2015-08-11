@@ -15,8 +15,13 @@ module Lita
           comment   = body["comment"]["body"]
           commenter = github_to_slack_username(body["comment"]["user"]["login"])
 
-          # automatically include the creator of the PR
-          usernames_to_ping = [thing["user"]["login"]]
+          usernames_to_ping = []
+          # automatically include the creator of the PR, unless he's
+          # commenting on his own PR
+          if body["comment"]["user"]["login"] != thing["user"]["login"]
+            usernames_to_ping << [thing["user"]["login"]]
+          end
+
 
           # Is anyone mentioned in this comment?
           if comment.include?("@")
@@ -36,7 +41,7 @@ module Lita
             pref = find_engineer(slack: user)[:preference]
             case pref
             when "off"
-              return
+              # do nothing
             when "dm", nil
               private_message  = "New PR comment from @#{commenter}:\n"
               private_message += "#{pr_url}\n#{comment}"
