@@ -4,9 +4,7 @@ module Lita
 
       config :engineers, type: Array, required: true
 
-      route(/@(\w*)/, :detect_comment, command: false)
-
-      http.post "/ghping", :ghping
+      http.post("/ghping", :ghping)
 
       def ghping(request, response)
         body = MultiJson.load(request.body)
@@ -62,31 +60,6 @@ module Lita
         else
           puts "Could not find user with name #{username}"
         end
-      end
-
-      def detect_comment(message)
-        return unless message.user.metadata["name"] == "" # Integrations don't have names
-        mentioned_username = message.matches[0][0]
-
-        config.engineers.each do |eng|
-          if eng[:github] == mentioned_username
-
-            case eng[:preference]
-            when "dm"
-              send_dm(eng[:slack], message.message.body)
-            when "eng_pr", "eng-pr"
-              message.reply(eng[:slack] + ": " + message.message.body)
-            when "off"
-              return
-            else
-              send_dm(eng[:slack], message.message.body)
-            end
-
-            return
-          end
-        end
-
-        message.reply("Could not find a slack username for #{mentioned_username}. Please configure everbot to include this username.")
       end
     end
 
