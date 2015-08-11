@@ -7,36 +7,60 @@ module Lita
       http.post("/ghping", :ghping)
 
       def ghping(request, response)
+
+        puts "######################################"
+        puts "GitHub hook received. Parsing body... "
+
         body = MultiJson.load(request.body)
 
+        print "Done."
+        puts "######################################"
+
         if body["comment"]
+          puts "Detected a comment. Extracting data... "
+
           thing     = body["pull_request"] || body["issue"]
           pr_url    = thing["html_url"]
           comment   = body["comment"]["body"]
-          commenter = github_to_slack_username(body["comment"]["user"]["login"])
+          commenter = body["comment"]["user"]["login"]
+          pr_owner  = thing["user"]["login"]
+
+          puts "Found PR #{pr_url}"
+          puts "Found commenter #{commenter}"
+          puts "Found pr owner #{pr_owner}"
 
           usernames_to_ping = []
           # automatically include the creator of the PR, unless he's
           # commenting on his own PR
-          if body["comment"]["user"]["login"] != thing["user"]["login"]
-            usernames_to_ping << [thing["user"]["login"]]
+          if commenter != pr_owner
+            puts "Commenter is not the pr owner. Adding to list of usernames to ping."
+            usernames_to_ping << pr_owner
           end
 
+          puts "So far, github usernames to ping: #{usernames_to_ping}"
 
           # Is anyone mentioned in this comment?
           if comment.include?("@")
+            puts "Found @mentions in the body of the comment! Extracting usernames... "
+
             # get each @mentioned username in the comment
             mentions = comment.split("@")[1..-1].map { |snip| snip.split(" ").first }
+            print "Done. (Got #{mentions})"
 
             # add them to the list of usernames to ping
             usernames_to_ping = usernames_to_ping.concat(mentions).uniq
           end
 
+          puts "New list of github usernames to ping: #{usernames_to_ping}."
+          puts "Converting github usernames to slack usernames... "
+
           # slackify all of the users
           usernames_to_ping.map! { |user| github_to_slack_username(user) }
 
-          puts "Got a comment on something, sending messages to #{usernames_to_ping}"
-          usernames_to_ping.each do |user|
+          print "Done. (Got #{usernames_to_ping})"
+
+          puts "Starting pinging process for each engineer..."
+          usernames_to_ping.compact.each do |user|
 
             pref = find_engineer(slack: user)[:preference]
             case pref
@@ -53,15 +77,19 @@ module Lita
             end
 
           end
+
+          puts "GitHub Hook successfully processed."
         end
 
         response
       end
 
       def alert_eng_pr(message)
+        puts "Alerting #eng-pr about content #{message[0..5]}... "
         room = Lita::Room.fuzzy_find("eng-pr")
         source = Lita::Source.new(room: room)
         robot.send_message(source, message)
+        puts "Done."
       end
 
       def find_engineer(slack: nil, github: nil)
@@ -75,13 +103,16 @@ module Lita
       end
 
       def github_to_slack_username(github_username)
-        find_engineer(github: github_username)[:slack]
+        engineer = find_engineer(github: github_username)
+        engineer[:slack] if engineer
       end
 
       def send_dm(username, content)
+        puts "Sending DM to #{username} with content #{content[0..5]}... "
         if user = Lita::User.fuzzy_find(username)
           source = Lita::Source.new(user: user)
           robot.send_message(source, content)
+          print "Done."
         else
           alert_eng_pr("Could not find user with name #{username}, please configure everbot.")
         end
