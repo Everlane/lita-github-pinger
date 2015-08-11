@@ -25,10 +25,10 @@ module Lita
 
             # add them to the list of usernames to ping
             usernames_to_ping = usernames_to_ping.concat(mentions).uniq
-
-            # slackify all of the users
-            usernames_to_ping.map! { |user| github_to_slack_username(user) }
           end
+
+          # slackify all of the users
+          usernames_to_ping.map! { |user| github_to_slack_username(user) }
 
           puts "Got a comment on something, sending messages to #{usernames_to_ping}"
           usernames_to_ping.each do |user|
