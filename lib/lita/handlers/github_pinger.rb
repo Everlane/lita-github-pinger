@@ -62,7 +62,7 @@ module Lita
       def find_engineer(slack: nil, github: nil)
         config.engineers.select do |eng|
           if slack
-            eng[:github] == slack
+            eng[:slack] == slack
           elsif github
             eng[:github] == github
           end
