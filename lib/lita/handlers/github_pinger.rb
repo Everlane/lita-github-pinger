@@ -13,9 +13,10 @@ module Lita
 
         if body["comment"]
 
-          puts "GOT A PR COMMENT"
-          pr_url = body["pull_request"]["html_url"]
-          pr_owner = body["pull_request"]["user"]["login"]
+          thing = body["pull_request"] || body["issue"]
+
+          pr_url = thing["html_url"]
+          pr_owner = thing["user"]["login"]
           commenter = body["comment"]["user"]["login"]
           comment = body["comment"]["body"].split("\n").join("\n >")
 
@@ -30,9 +31,10 @@ module Lita
           message  = "New PR comment from #{commenter}:\n"
           message += "#{pr_url}\n> #{comment}"
 
-          puts "Sending to #{pr_owner}"
+          puts "Got a comment on something, sending message to #{pr_owner}"
 
           send_dm(pr_owner, message)
+
         end
 
 
