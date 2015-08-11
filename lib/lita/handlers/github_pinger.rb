@@ -12,6 +12,8 @@ module Lita
         body = MultiJson.load(request.body)
 
         if body["comment"]
+
+          puts "GOT A PR COMMENT"
           pr_url = body["pull_request"]["html_url"]
           pr_owner = body["pull_request"]["user"]["login"]
           commenter = body["comment"]["user"]["login"]
@@ -27,6 +29,8 @@ module Lita
 
           message  = "New PR comment from #{commenter}:\n"
           message += "#{pr_url}\n> #{comment}"
+
+          puts "Sending to #{pr_owner}"
 
           send_dm(pr_owner, message)
         end
