@@ -58,14 +58,19 @@ module Lita
           usernames_to_ping.compact.each do |user|
 
             pref = find_engineer(slack: user)[:preference]
+
+            puts "Found preference #{pref.inspect} for user #{user}"
+
             case pref
             when "off"
-              # do nothing
+              puts "Preference was 'off', so doing nothing."
             when "dm", nil
+              puts "Preference was either 'dm' or nil, so sending DM."
               private_message  = "New PR comment from @#{commenter}:\n"
               private_message += "#{pr_url}\n#{comment}"
               send_dm(user, private_message)
             when "eng-pr", "eng_pr"
+              puts "Preference was either 'eng-pr' or 'eng_pr', so alerting #eng-pr."
               public_message  = "@#{user}, new PR mention: "
               public_message += "#{pr_url}\n#{comment}" if user == usernames_to_ping.last
               alert_eng_pr(public_message)
