@@ -42,7 +42,7 @@ module Lita
 
       def act_on_assign(body, response)
         puts "Detected that someone got assigned to a pull request."
-        assignee = find_engineer(github: body["pull_request"]["assignee"])
+        assignee = find_engineer(github: body["pull_request"]["assignee"]["login"])
         assigner = find_engineer(github: body["pull_request"]["user"]["login"])
 
         puts "#{assignee} determined as the assignee."
