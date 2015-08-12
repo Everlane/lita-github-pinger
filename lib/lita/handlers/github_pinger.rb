@@ -57,7 +57,7 @@ module Lita
         response
       end
 
-      def act_on_comment(request, response)
+      def act_on_comment(body, response)
         puts "Detected a comment. Extracting data... "
 
         comment_url = body["comment"]["html_url"]
