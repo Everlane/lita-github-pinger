@@ -43,13 +43,11 @@ module Lita
       def act_on_assign(body, response)
         puts "Detected that someone got assigned to a pull request."
         assignee = find_engineer(github: body["pull_request"]["assignee"]["login"])
-        assigner = find_engineer(github: body["pull_request"]["user"]["login"])
 
         puts "#{assignee} determined as the assignee."
-        puts "#{assigner} determined as assigner."
 
         pr_url   = body["pull_request"]["html_url"]
-        message = "*Heads up!* #{assigner[:slack]} has assigned you to review their pull request:\n#{pr_url}"
+        message = "*Heads up!* You've been assigned to review a pull request:\n#{pr_url}"
 
         puts "Sending DM to #{assignee}..."
         send_dm(assignee[:slack], message)
