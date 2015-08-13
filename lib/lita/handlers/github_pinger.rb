@@ -7,10 +7,14 @@ module Lita
       ####
 
       # example entry: {
-      #   :slack         => "taylor"
-      #   :github        => "taylorlapeyre"
-      #   :frequency     => "only_mentions"
-      #   :ping_location => "dm"
+      #   :usernames => {
+      #     :slack         => "taylor",
+      #     :github        => "taylorlapeyre"
+      #   },
+      #   :github_preferences =>  {
+      #     :frequency     => "only_mentions",
+      #     :ping_location => "dm"
+      #   }
       #}
       #
       # :ping_location can be...
@@ -40,6 +44,12 @@ module Lita
         end
       end
 
+      def travisping(request, response)
+        puts "########## New Travis Event! ##########"
+        body = MultiJson.load(request.body)
+        p MultiJson.dump(body)
+      end
+
       def act_on_assign(body, response)
         puts "Detected that someone got assigned to a pull request."
         assignee = find_engineer(github: body["pull_request"]["assignee"]["login"])
@@ -50,7 +60,7 @@ module Lita
         message = "*Heads up!* You've been assigned to review a pull request:\n#{pr_url}"
 
         puts "Sending DM to #{assignee}..."
-        send_dm(assignee[:slack], message)
+        send_dm(assignee[:usernames][:slack], message)
 
         response
       end
@@ -76,7 +86,7 @@ module Lita
         # automatically include the creator of the PR, unless he's
         # commenting on his own PR
 
-        if commenter != pr_owner && ["all_discussion", nil].include?(pr_owner[:frequency])
+        if commenter != pr_owner && ["all_discussion", nil].include?(pr_owner[:github_preferences][:frequency])
           puts "PR owner was not the commenter, and has a :frequency of 'all_discussion' or nil"
           puts "Therefore, adding the PR owner to list of engineers to ping."
           engineers_to_ping << pr_owner
@@ -104,17 +114,17 @@ module Lita
         puts "Starting pinging process for each engineer..."
         engineers_to_ping.each do |engineer|
           puts "looking at #{engineer}'s preferences..'"
-          next if engineer[:frequency] == "off"
+          next if engineer[:github_preferences][:frequency] == "off"
 
-          case engineer[:ping_location]
+          case engineer[:github_preferences][:ping_location]
           when "dm", nil
             puts "Preference was either 'dm' or nil, so sending DM."
-            private_message  = "New PR comment from @#{commenter[:slack]}:\n"
+            private_message  = "New PR comment from @#{commenter[:usernames][:slack]}:\n"
             private_message += "#{comment_url}\n#{comment}"
-            send_dm(engineer[:slack], private_message)
+            send_dm(engineer[:usernames][:slack], private_message)
           when "eng-pr", "eng_pr"
             puts "Preference was either 'eng-pr' or 'eng_pr', so alerting #eng-pr."
-            public_message  = "@#{engineer[:slack]}, new PR mention: "
+            public_message  = "@#{engineer[:usernames][:slack]}, new PR mention: "
             public_message += "#{comment_url}\n#{comment}"
             alert_eng_pr(public_message)
           end
@@ -136,9 +146,9 @@ module Lita
       def find_engineer(slack: nil, github: nil)
         config.engineers.select do |eng|
           if slack
-            eng[:slack] == slack
+            eng[:usernames][:slack] == slack
           elsif github
-            eng[:github] == github
+            eng[:usernames][:github] == github
           end
         end.first
       end
