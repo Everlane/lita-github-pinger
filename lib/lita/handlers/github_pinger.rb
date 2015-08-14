@@ -71,8 +71,8 @@ module Lita
         message = ":x: Your commit failed some tests."
         message += "\n#{commit_url}"
 
-        return if ["off", "only_passes"].include?(commiter[:travis_preferences][:frequency])
-        send_dm(commiter[:usernames][:slack], message)
+        return if ["off", "only_passes"].include?(committer[:travis_preferences][:frequency])
+        send_dm(committer[:usernames][:slack], message)
 
         response
       end
@@ -85,8 +85,8 @@ module Lita
         message = ":white_check_mark: Your commit has passed its travis build."
         message += "\n#{commit_url}"
 
-        return if ["off", "only_failures"].include?(commiter[:travis_preferences][:frequency])
-        send_dm(commiter[:usernames][:slack], message)
+        return if ["off", "only_failures"].include?(committer[:travis_preferences][:frequency])
+        send_dm(committer[:usernames][:slack], message)
 
         response
       end
