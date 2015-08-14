@@ -65,7 +65,7 @@ module Lita
 
       def act_on_build_failure(body, response)
         commit_url = body["commit"]["html_url"]
-        committer = find_engineer(github: github["commit"]["committer"]["login"])
+        committer = find_engineer(github: body["commit"]["committer"]["login"])
 
         puts "Detected a travis build failure for commit #{body["sha"]}"
         message = ":x: Your commit failed some tests."
@@ -79,7 +79,7 @@ module Lita
 
       def act_on_build_success(body, response)
         commit_url = body["commit"]["html_url"]
-        committer = find_engineer(github: github["commit"]["committer"]["login"])
+        committer = find_engineer(github: body["commit"]["committer"]["login"])
 
         puts "Detected a travis build success for commit #{body["sha"]}"
         message = ":white_check_mark: Your commit has passed its travis build."
