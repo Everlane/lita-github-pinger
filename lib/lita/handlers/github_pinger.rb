@@ -34,10 +34,9 @@ module Lita
       config :engineers, type: Hash, required: true
 
       http.post("/ghping", :ghping)
-      http.post("/travisping", :travisping)
 
       def ghping(request, response)
-        puts "########## New GH PR Event! ##########"
+        puts "########## New GitHub Event! ##########"
         body = MultiJson.load(request.body)
 
         if body["comment"]
@@ -47,46 +46,38 @@ module Lita
         if body["action"] && body["action"] == "assigned"
           act_on_assign(body, response)
         end
-      end
 
-      def travisping(request, response)
-        puts "########## New Travis Event! ##########"
-        body = MultiJson.load(request.body)
+        if body["state"] && body["state"] == "success"
+          act_on_build_success(body, response)
+        end
 
-        committer = find_engineer(name: body["matrix"]["author_name"])
-        build_status = body["status_message"]
-
-        if build_status == "Passed"
-          act_on_build_success(commiter, body)
-        elsif ["Broken", "Failed"].include?(build_status)
-          act_on_build_failure(commiter, body)
+        if body["state"] && body["state"] == "failure"
+          act_on_build_failure(body, response)
         end
       end
 
-      def act_on_build_failure(commiter, body)
-        pr_url = body["repository"]["url"] + "/pull/" + body["pull_request_number"]
-        build_url = body["build_url"]
+      def act_on_build_failure(body, response)
+        commit_url = body["commit"]["html_url"]
+        committer = find_engineer(github: github["commit"]["committer"]["login"])
 
-        puts "Detected that the travis build was for PR #{pr_url}"
-        message = ":x: Your pull request failed its travis build."
-        message += "#{pr_url}\n#{build_url}"
+        puts "Detected a travis build failure for commit #{body["sha"]}"
+        message = ":x: Your commit failed some tests."
+        message += "\n#{commit_url}"
 
-        if commiter[:travis_preferences][:frequency] != "only_passes"
-          send_dm(commiter[:usernames][:slack], message)
-        end
+        return if ["off", "only_passes"].include?(commiter[:travis_preferences][:frequency])
+        send_dm(commiter[:usernames][:slack], message)
       end
 
-      def act_on_build_success(commiter, body)
-        pr_url = body["repository"]["url"] + "/pull/" + body["pull_request_number"]
-        build_url = body["build_url"]
+      def act_on_build_success(body, response)
+        commit_url = body["commit"]["html_url"]
+        committer = find_engineer(github: github["commit"]["committer"]["login"])
 
-        puts "Detected that the travis build was for PR #{pr_url}"
-        message = ":white_check_mark: Your pull request has passed its travis build."
-        message += "#{pr_url}\n#{build_url}"
+        puts "Detected a travis build success for commit #{body["sha"]}"
+        message = ":white_check_mark: Your commit has passed its travis build."
+        message += "\n#{commit_url}"
 
-        if commiter[:travis_preferences][:frequency] != "only_failures"
-          send_dm(commiter[:usernames][:slack], message)
-        end
+        return if ["off", "only_failures"].include?(commiter[:travis_preferences][:frequency])
+        send_dm(commiter[:usernames][:slack], message)
       end
 
       def act_on_assign(body, response)
