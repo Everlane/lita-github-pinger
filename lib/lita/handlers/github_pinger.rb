@@ -52,7 +52,41 @@ module Lita
       def travisping(request, response)
         puts "########## New Travis Event! ##########"
         body = MultiJson.load(request.body)
-        p MultiJson.dump(body)
+
+        committer = find_engineer(name: body["matrix"]["author_name"])
+        build_status = body["status_message"]
+
+        if build_status == "Passed"
+          act_on_build_success(commiter, body)
+        elsif ["Broken", "Failed"].include?(build_status)
+          act_on_build_failure(commiter, body)
+        end
+      end
+
+      def act_on_build_failure(commiter, body)
+        pr_url = body["repository"]["url"] + "/pull/" + body["pull_request_number"]
+        build_url = body["build_url"]
+
+        puts "Detected that the travis build was for PR #{pr_url}"
+        message = ":x: Your pull request failed its travis build."
+        message += "#{pr_url}\n#{build_url}"
+
+        if commiter[:travis_preferences][:frequency] != "only_passes"
+          send_dm(commiter[:usernames][:slack], message)
+        end
+      end
+
+      def act_on_build_success(commiter, body)
+        pr_url = body["repository"]["url"] + "/pull/" + body["pull_request_number"]
+        build_url = body["build_url"]
+
+        puts "Detected that the travis build was for PR #{pr_url}"
+        message = ":white_check_mark: Your pull request has passed its travis build."
+        message += "#{pr_url}\n#{build_url}"
+
+        if commiter[:travis_preferences][:frequency] != "only_failures"
+          send_dm(commiter[:usernames][:slack], message)
+        end
       end
 
       def act_on_assign(body, response)
@@ -148,7 +182,11 @@ module Lita
         puts "Done."
       end
 
-      def find_engineer(slack: nil, github: nil)
+      def find_engineer(slack: nil, github: nil, name: nil)
+        if name
+          return config.engineers[name]
+        end
+
         config.engineers.values.select do |eng|
           if slack
             eng[:usernames][:slack] == slack
