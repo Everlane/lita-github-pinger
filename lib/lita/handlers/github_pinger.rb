@@ -6,7 +6,8 @@ module Lita
       # ENGINEER NOTIFICATION PREFERENCES
       ####
 
-      # example entry: {
+      # example entry:
+      # "Taylor Lapeyre" => {
       #   :usernames => {
       #     :slack         => "taylor",
       #     :github        => "taylorlapeyre"
@@ -14,6 +15,9 @@ module Lita
       #   :github_preferences =>  {
       #     :frequency     => "only_mentions",
       #     :ping_location => "dm"
+      #   },
+      #   :travis_preferences => {
+      #     :frequency => "only_failures"
       #   }
       #}
       #
@@ -30,6 +34,7 @@ module Lita
       config :engineers, type: Array, required: true
 
       http.post("/ghping", :ghping)
+      http.post("/travisping", :travisping)
 
       def ghping(request, response)
         puts "########## New GH PR Event! ##########"
@@ -144,7 +149,7 @@ module Lita
       end
 
       def find_engineer(slack: nil, github: nil)
-        config.engineers.select do |eng|
+        config.engineers.values.select do |eng|
           if slack
             eng[:usernames][:slack] == slack
           elsif github
