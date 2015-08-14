@@ -31,7 +31,7 @@ module Lita
       #  - "only_mentions" (will only ping you when you are explicitly @mentioned)
       #  - "off"
       #  default: "all_discussion"
-      config :engineers, type: Array, required: true
+      config :engineers, type: Hash, required: true
 
       http.post("/ghping", :ghping)
       http.post("/travisping", :travisping)
