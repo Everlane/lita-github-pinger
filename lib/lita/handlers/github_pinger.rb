@@ -21,14 +21,21 @@ module Lita
       #   }
       #}
       #
-      # :ping_location can be...
+      # :github_preferences[:ping_location] can be...
       #  - "dm"
       #  - "eng-pr" (pings you in #eng-pr)
       #  default: "dm"
       #
-      # :frequency can be
+      # :github_preferences[:frequency] can be
       #  - "all_discussion" (pings you about any comments on your PRs and @mentions)
       #  - "only_mentions" (will only ping you when you are explicitly @mentioned)
+      #  - "off"
+      #  default: "all_discussion"
+      #
+      # :travis_preferences[:frequency] can be
+      #  - "only_passes"
+      #  - "only_failures"
+      #  - "everything"
       #  - "off"
       #  default: "all_discussion"
       config :engineers, type: Hash, required: true
@@ -66,6 +73,8 @@ module Lita
 
         return if ["off", "only_passes"].include?(commiter[:travis_preferences][:frequency])
         send_dm(commiter[:usernames][:slack], message)
+
+        response
       end
 
       def act_on_build_success(body, response)
@@ -78,6 +87,8 @@ module Lita
 
         return if ["off", "only_failures"].include?(commiter[:travis_preferences][:frequency])
         send_dm(commiter[:usernames][:slack], message)
+
+        response
       end
 
       def act_on_assign(body, response)
