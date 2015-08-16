@@ -115,6 +115,7 @@ module Lita
 
         commenter = find_engineer(github: body["comment"]["user"]["login"])
         pr_owner  = find_engineer(github: context["user"]["login"])
+        lita_commenter = Lita::User.fuzzy_find(commenter[:usernames][:slack])
 
         puts "Reacting to PR comment #{comment_url}"
         puts "Found commenter #{commenter}"
@@ -160,7 +161,7 @@ module Lita
           case engineer[:github_preferences][:ping_location]
           when "dm", nil
             puts "Preference was either 'dm' or nil, so sending DM."
-            private_message  = "New PR comment from @#{commenter[:usernames][:slack]}:\n"
+            private_message  = "New PR comment from <@#{lita_commenter.id}|#{commenter[:usernames][:slack]}>:\n"
             private_message += "#{comment_url}\n#{comment}"
             send_dm(engineer[:usernames][:slack], private_message)
           when "eng-pr", "eng_pr"
