@@ -19,7 +19,15 @@ gem "lita-github-pinger"
 
 ## Configuration
 
-You will need to have a config variable named `config.handlers.github_pinger.engineers` set to the following:
+For any repos which you would like to watch, add a GitHub webhook pointing to: http://yourlitaapp.herokuapp.com/ghping and check off the following events:
+
+- Issue comment
+- Pull Request review comment
+- Pull Request
+- Status
+
+
+You will also need to have a config variable named `config.handlers.github_pinger.engineers` set to the following:
 
 ```ruby
 config.handlers.github_pinger.engineers = {
