@@ -1,5 +1,7 @@
 require "spec_helper"
 
+# This file is out of date and will be fixed soon
+
 describe Lita::Handlers::GithubPinger, lita_handler: true do
   before do
     registry.config.handlers.github_pinger.engineers = [
@@ -7,38 +9,6 @@ describe Lita::Handlers::GithubPinger, lita_handler: true do
         slack: "taylor",
         github: "taylorlapeyre"
       },
-      {
-        slack: "petergao",
-        github: "peteygao"
-      },
-      {
-        slack: "matt",
-        github: "mtthgn"
-      },
-      {
-        slack: "bigsean",
-        github: "telaviv"
-      },
-      {
-        slack: "urich",
-        github: "maalur"
-      },
-      {
-        slack: "evan",
-        github: "evantarrh"
-      },
-      {
-        slack: "bsturd",
-        github: "bsturdivan"
-      },
-      {
-        slack: "jeff",
-        github: "jeffmicklos"
-      },
-      {
-        slack: "nan",
-        github: "thenanyu"
-      }
     ]
   end
 
