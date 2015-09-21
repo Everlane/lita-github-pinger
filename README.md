@@ -19,7 +19,7 @@ gem "lita-github-pinger"
 
 ## Configuration
 
-For any repos which you would like to watch, add a GitHub webhook pointing to: http://yourlitaapp.herokuapp.com/ghping and check off the following events:
+For any repos which you would like to watch, add a GitHub webhook that will post to http://yourlitaapp.herokuapp.com/ghping and check off the following events:
 
 - Issue comment
 - Pull Request review comment
