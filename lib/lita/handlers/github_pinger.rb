@@ -139,7 +139,7 @@ module Lita
           puts "Found @mentions in the body of the comment! Extracting usernames... "
 
           # get each @mentioned engineer in the comment
-          mentions = comment.split("@")[1..-1].map { |snip| snip.split(" ").first.gsub(/[^0-9a-z ]/i) }
+          mentions = comment.split("@")[1..-1].map { |snip| snip.split(" ").first.gsub(/[^0-9a-z ]/i, '') }
 
           puts "Done. Got #{mentions}"
           puts "Converting usernames to engineers..."
