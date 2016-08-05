@@ -45,50 +45,31 @@ module Lita
       def ghping(request, response)
         puts "########## New GitHub Event! ##########"
         body = MultiJson.load(request.body)
+        username = body && body['user'] && body['user']['login']
+        prid = body && body['number']
 
-        if body["comment"]
-          act_on_comment(body, response)
+        if body['review']
+          puts "found review: #{body['review']}, #{body['action']}, #{body['pull_request']}"
         end
 
-        if body["action"] && body["action"] == "assigned"
+        case body['action']
+        when /unassigned/
+          puts "#{username} unassigned from #{prid}"
+        when /opened/
+          puts "#{username} opened from #{prid}"
+        when /assigned/
           act_on_assign(body, response)
+        else
+          if body['comment']
+            act_on_comment(body, response)
+
+          elsif body["context"] == "continuous-integration/codeship"
+            puts "codeship message"
+          else
+            puts "unknown event! #{body['action']}"
+            puts "body: #{body}"
+          end
         end
-
-        if body["state"] && body["state"] == "success"
-          act_on_build_success(body, response)
-        end
-
-        if body["state"] && body["state"] == "failure"
-          act_on_build_failure(body, response)
-        end
-      end
-
-      def act_on_build_failure(body, response)
-        commit_url = body["commit"]["html_url"]
-        committer = find_engineer(github: body["commit"]["committer"]["login"])
-
-        puts "Detected a travis build failure for commit #{body["sha"]}"
-        message = ":x: Your commit failed some tests."
-        message += "\n#{commit_url}"
-
-        return if ["off", "only_passes"].include?(committer[:travis_preferences][:frequency])
-        send_dm(committer[:usernames][:slack], message)
-
-        response
-      end
-
-      def act_on_build_success(body, response)
-        commit_url = body["commit"]["html_url"]
-        committer = find_engineer(github: body["commit"]["committer"]["login"])
-
-        puts "Detected a travis build success for commit #{body["sha"]}"
-        message = ":white_check_mark: Your commit has passed its travis build."
-        message += "\n#{commit_url}"
-
-        return if ["off", "only_failures"].include?(committer[:travis_preferences][:frequency])
-        send_dm(committer[:usernames][:slack], message)
-
-        response
       end
 
       def act_on_assign(body, response)
@@ -129,6 +110,7 @@ module Lita
 
         puts "Reacting to PR comment #{comment_url}"
         puts "Found commenter #{commenter}"
+        puts "Found lita_commenter #{lita_commenter}"
         puts "Found pr owner #{pr_owner}"
 
         # Sanity Checks - might be a new engineer around that hasn't set up
