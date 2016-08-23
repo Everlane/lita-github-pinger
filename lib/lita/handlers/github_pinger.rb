@@ -92,13 +92,23 @@ module Lita
       end
 
       def act_on_assign(body, response)
-        puts "Detected that someone got assigned to a pull request."
-        assignee = find_engineer(github: body["pull_request"]["assignee"]["login"])
+        type = detect_type(body)
+
+        if type.nil?
+          puts 'Neither pull request or issue detected, exiting...'
+          return
+        end
+
+        puts "Detected that someone got assigned to a #{type.tr('_', ' ')}."
+
+        assignee_login = body[type]['assignee']['login']
+        assignee = find_engineer(github: assignee_login)
 
         puts "#{assignee} determined as the assignee."
 
-        pr_url   = body["pull_request"]["html_url"]
-        message = "*Heads up!* You've been assigned to review a pull request:\n#{pr_url}"
+        url = body[type]['html_url']
+
+        message = "*Heads up!* You've been assigned to review a #{type.tr('_', ' ')}:\n#{url}"
 
         puts "Sending DM to #{assignee}..."
         send_dm(assignee[:usernames][:slack], message)
@@ -210,6 +220,14 @@ module Lita
           puts "Done."
         else
           alert_eng_pr("Could not find user with name #{username}, please configure everbot.")
+        end
+      end
+
+      def detect_type(body)
+        if body['pull_request']
+          'pull_request'
+        elsif body['issue']
+          'issue'
         end
       end
     end
