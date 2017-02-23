@@ -43,8 +43,13 @@ module Lita
       http.post("/ghping", :ghping)
 
       def ghping(request, response)
-        puts "########## New GitHub Event! ##########"
         body = MultiJson.load(request.body)
+        puts "########## Event: #{body['action']} ##########"
+        puts "keys: #{body.keys}"
+        if body['pull_request']
+          puts "pull_request.keys: #{body['pull_request'].keys}"
+          puts "pull_request: #{body['pull_request']}"
+        end
         username = body && body['user'] && body['user']['login']
         prid = body && body['number']
 
@@ -53,8 +58,15 @@ module Lita
         end
 
         case body['action']
+        when /review_requested/
+          puts "review_requested: #{username}"
+          act_on_review_requested(body, response)
+        when /review_request_removed/
+          puts "review_request_removed: #{username}"
+          act_on_review_request_removed(body, response)
         when /unassigned/
           puts "#{username} unassigned from #{prid}"
+          act_on_review_request_removed(body, response)
         when /opened/
           puts "#{username} opened from #{prid}"
         when /assigned/
@@ -70,6 +82,26 @@ module Lita
             puts "body: #{body}"
           end
         end
+      end
+
+      def act_on_review_requested(body, response)
+        requested_reviewer_login = body["requested_reviewer"]["login"]
+        requested_reviewer = find_engineer(github: requested_reviewer_login)
+        url = body["pull_request"]["html_url"]
+        title = body["pull_request"]["title"]
+        message = "*Heads up!* Your review has been requested on #{url}\n```\n#{title}\n```"
+        puts message
+        send_dm(requested_reviewer[:usernames][:slack], message)
+      end
+
+      def act_on_review_request_removed(body, response)
+        requested_reviewer_login = body["requested_reviewer"]["login"]
+        requested_reviewer = find_engineer(github: requested_reviewer_login)
+        url = body["pull_request"]["html_url"]
+        title = body["pull_request"]["title"]
+        message = "*Heads up!* You've been un-assigned from #{url}\n```\n#{title}\n```"
+        puts message
+        send_dm(requested_reviewer[:usernames][:slack], message)
       end
 
       def act_on_assign(body, response)
