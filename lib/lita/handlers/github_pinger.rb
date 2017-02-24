@@ -206,7 +206,7 @@ module Lita
 
       def alert_eng_pr(message)
         puts "Alerting #eng-pr about content #{message[0..5]}... "
-        room = Lita::Room.fuzzy_find("eng-pr")
+        room = Lita::Room.fuzzy_find("testing")
         source = Lita::Source.new(room: room)
         robot.send_message(source, message)
         puts "Done."
@@ -227,14 +227,21 @@ module Lita
       end
 
       def send_dm(username, content)
-        puts "Sending DM to #{username} with content #{content[0..5]}... "
-        if user = Lita::User.fuzzy_find(username)
+        puts "Sending DM to #{username} with content:"
+        puts "  #{content}"
+        if user = find_user(username)
+          puts "Found user: #{user.inspect}"
           source = Lita::Source.new(user: user)
           robot.send_message(source, content)
           puts "Done."
         else
-          alert_eng_pr("Could not find user with name #{username}, please configure everbot.")
+          puts "Could not find user with name #{username}"
+          alert_eng_pr("Could not find user with name #{username}")
         end
+      end
+
+      def find_user(username)
+        Lita::User.fuzzy_find(username) || Lita::User.fuzzy_find(username.capitalize)
       end
 
       def detect_type(body)
