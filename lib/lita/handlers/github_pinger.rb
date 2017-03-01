@@ -64,9 +64,9 @@ module Lita
         when /review_request_removed/
           puts "review_request_removed: #{username}"
           act_on_review_request_removed(body, response)
-        when /pull_request_review/
-          puts "pull_request_review: #{username}"
-          act_on_pull_request_review(body, response)
+        when /submitted/
+          puts "submitted: #{username}"
+          act_on_submitted(body, response)
         when /unassigned/
           puts "#{username} unassigned from #{prid}"
           act_on_review_request_removed(body, response)
@@ -92,7 +92,7 @@ module Lita
         requested_reviewer = find_engineer(github: requested_reviewer_login)
         url = body["pull_request"]["html_url"]
         title = body["pull_request"]["title"]
-        message = "*Heads up!* Your review has been requested on #{url}\n```\n#{title}\n```"
+        message = "*Heads up!* Your review has been requested on #{url} '#{title}'"
         puts message
         send_dm(requested_reviewer[:usernames][:slack], message)
       end
@@ -102,25 +102,32 @@ module Lita
         requested_reviewer = find_engineer(github: requested_reviewer_login)
         url = body["pull_request"]["html_url"]
         title = body["pull_request"]["title"]
-        message = "*Heads up!* You've been un-assigned from #{url}\n```\n#{title}\n```"
+        message = "*Heads up!* You've been un-assigned from #{url} '#{title}'"
         puts message
         send_dm(requested_reviewer[:usernames][:slack], message)
       end
 
-      def act_on_pull_request_review(body, response)
-        puts ?* * 80
-        puts body.keys.sort
-        puts ?* * 80
-        puts body.inspect
-        puts ?* * 80
-        puts response.inspect
-        #requested_reviewer_login = body["requested_reviewer"]["login"]
-        #requested_reviewer = find_engineer(github: requested_reviewer_login)
-        #url = body["pull_request"]["html_url"]
-        #title = body["pull_request"]["title"]
-        #message = "*Heads up!* You've been un-assigned from #{url}\n```\n#{title}\n```"
-        #puts message
-        #send_dm(requested_reviewer[:usernames][:slack], message)
+      def act_on_submitted(body, response)
+
+        reviewer_login = body["review"]["user"]['login']
+        review_body = body["review"]["body"]
+        review_state = case body["review"]['state']
+                        when "approved"
+                          ":thumbsup: approved"
+                        when "changes_requested"
+                         ':rotating_light: requested changes'
+                        when 'commented'
+                          ':thought_balloon: commented'
+                       end
+
+        author_login = body["pull_request"]["user"]["login"]
+        author = find_engineer(github: author_login)
+
+        url = body["pull_request"]["html_url"]
+        title = body["pull_request"]["title"]
+        message = "#{reviewer_login} has #{review_state} #{url} '#{title}'\n>#{review_body}"
+        puts message
+        send_dm(author[:usernames][:slack], message)
       end
 
       def act_on_assign(body, response)
