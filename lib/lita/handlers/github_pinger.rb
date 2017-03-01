@@ -108,16 +108,15 @@ module Lita
       end
 
       def act_on_submitted(body, response)
+        return if body["review"]['state'] == 'commented'
 
         reviewer_login = body["review"]["user"]['login']
         review_body = body["review"]["body"]
         review_state = case body["review"]['state']
-                        when "approved"
-                          ":thumbsup: approved"
-                        when "changes_requested"
-                         ':rotating_light: requested changes'
-                        when 'commented'
-                          ':thought_balloon: commented'
+                       when "approved"
+                         ":thumbsup: approved"
+                       when "changes_requested"
+                        ':rotating_light: requested changes'
                        end
 
         author_login = body["pull_request"]["user"]["login"]
