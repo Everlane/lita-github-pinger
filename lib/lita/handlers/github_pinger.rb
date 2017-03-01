@@ -1,3 +1,5 @@
+require 'ap'
+
 module Lita
   module Handlers
     class GithubPinger < Handler
@@ -45,16 +47,17 @@ module Lita
       def ghping(request, response)
         body = MultiJson.load(request.body)
         puts "########## Event: #{body['action']} ##########"
-        puts "keys: #{body.keys}"
+        ap "keys: #{body.keys}"
+        ap body
         if body['pull_request']
-          puts "pull_request.keys: #{body['pull_request'].keys}"
-          puts "pull_request: #{body['pull_request']}"
+          ap "pull_request.keys: #{body['pull_request'].keys}"
+          ap "pull_request: #{body['pull_request']}"
         end
         username = body && body['user'] && body['user']['login']
         prid = body && body['number']
 
         if body['review']
-          puts "found review: #{body['review']}, #{body['action']}, #{body['pull_request']}"
+          ap :found_review, body.slice(%w(review action pull_request))
         end
 
         case body['action']
