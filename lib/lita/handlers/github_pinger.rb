@@ -49,6 +49,9 @@ module Lita
         puts "########## New GitHub Event! ##########"
         body = MultiJson.load(request.body)
 
+        puts body["action"]
+        puts body["state"]
+
         if body["comment"]
           act_on_comment(body, response)
         end
