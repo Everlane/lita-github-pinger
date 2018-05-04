@@ -54,6 +54,10 @@ module Lita
           act_on_assign(body, response)
         end
 
+        if body["state"] && body["state"] == "opened"
+          act_on_pr_opened(body, response)
+        end
+
         if body["state"] && body["state"] == "success"
           act_on_build_success(body, response)
         end
@@ -114,6 +118,42 @@ module Lita
         send_dm(assignee[:usernames][:slack], message)
 
         response
+      end
+
+      def act_on_pr_opened(body, response)
+        puts "Detected that someone opened a #{type.tr('_', ' ')}."
+        if type.nil?
+          puts 'Neither pull request or issue detected, exiting...'
+          return
+        end
+
+        if config.enable_round_robin
+          puts "round robin is enabled, selecting the next engineer.."
+          next_reviewer_redis_key = 'lita-github-pinger:nexteng'
+
+          chosen_reviewer = redis.get(next_reviewer_redis_key)
+
+          next_reviewer_index = config.engineers.values.find_index do |eng|
+            eng[:enable_round_robin] && eng[:usernames][:slack] == chosen_reviewer
+          end + 1
+
+          next_reviewer = config.engineers.values[next_reviewer_index]
+
+          puts "#{chosen_reviewer} determined as the reviewer."
+          puts "#{next_reviewer} determined as the next reviewer"
+
+          puts "storing #{next_reviewer} in redis..."
+          redis.set(next_reviewer_redis_key, next_reviewer)
+
+          url = body[type]['html_url']
+
+          message = "You're next in line to review a PR! Please review, or assign to an engineer with more context if you think you are unable to give a thorough review. \n#{url}"
+
+          puts "Sending DM to #{chosen_reviewer}..."
+          send_dm(chosen_reviewer, message)
+
+          response
+        end
       end
 
       def act_on_comment(body, response)
