@@ -146,7 +146,7 @@ module Lita
           end
 
           next_reviewer_index = (current_reviewer_index + 1) % engineers_with_rr_enabled.length
-          next_reviewer = engineers_with_rr_enabled[next_reviewer_index]
+          next_reviewer = engineers_with_rr_enabled[next_reviewer_index][:usernames][:slack]
 
           puts "#{chosen_reviewer} determined as the reviewer."
           puts "#{next_reviewer} determined as the next reviewer"
