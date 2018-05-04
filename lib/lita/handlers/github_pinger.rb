@@ -41,6 +41,7 @@ module Lita
       #  - "off"
       #  default: "all_discussion"
       config :engineers, type: Hash, required: true
+      config :enable_round_robin, types: [TrueClass, FalseClass]
 
       http.post("/ghping", :ghping)
 
