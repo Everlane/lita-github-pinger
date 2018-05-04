@@ -1,5 +1,7 @@
 module Lita
   module Handlers
+    RR_REDIS_KEY = 'lita-github-pinger:roundrobin'.freeze
+
     class GithubPinger < Handler
 
       ####
@@ -39,6 +41,7 @@ module Lita
       #  - "off"
       #  default: "all_discussion"
       config :engineers, type: Hash, required: true
+      config :enable_round_robin, types: [TrueClass, FalseClass]
 
       http.post("/ghping", :ghping)
 
@@ -46,12 +49,19 @@ module Lita
         puts "########## New GitHub Event! ##########"
         body = MultiJson.load(request.body)
 
+        puts body["action"]
+        puts body["state"]
+
         if body["comment"]
           act_on_comment(body, response)
         end
 
         if body["action"] && body["action"] == "assigned"
           act_on_assign(body, response)
+        end
+
+        if body["action"] && body["action"] == "opened"
+          act_on_pr_opened(body, response)
         end
 
         if body["state"] && body["state"] == "success"
@@ -114,6 +124,48 @@ module Lita
         send_dm(assignee[:usernames][:slack], message)
 
         response
+      end
+
+      def act_on_pr_opened(body, response)
+        type = detect_type(body)
+        puts "Detected that someone opened a #{type.tr('_', ' ')}."
+        if type.nil?
+          puts 'Neither pull request or issue detected, exiting...'
+          return
+        end
+
+        if config.enable_round_robin
+          puts "round robin is enabled, selecting the next engineer.."
+
+          chosen_reviewer = redis.get(RR_REDIS_KEY)
+          engineers_with_rr_enabled = config.engineers.values.select { |eng| eng[:enable_round_robin] }
+
+          if chosen_reviewer.nil?
+            chosen_reviewer = engineers_with_rr_enabled[0][:usernames][:slack]
+          end
+
+          current_reviewer_index = engineers_with_rr_enabled.find_index do |eng|
+            eng[:usernames][:slack] == chosen_reviewer
+          end
+
+          next_reviewer_index = (current_reviewer_index + 1) % engineers_with_rr_enabled.length
+          next_reviewer = engineers_with_rr_enabled[next_reviewer_index][:usernames][:slack]
+
+          puts "#{chosen_reviewer} determined as the reviewer."
+          puts "#{next_reviewer} determined as the next reviewer"
+
+          puts "storing #{next_reviewer} in redis..."
+          redis.set(RR_REDIS_KEY, next_reviewer)
+
+          url = body[type]['html_url']
+
+          message = "You're next in line to review a PR! Please review, or assign to an engineer with more context if you think you are unable to give a thorough review. \n#{url}"
+
+          puts "Sending DM to #{chosen_reviewer}..."
+          send_dm(chosen_reviewer, message)
+
+          response
+        end
       end
 
       def act_on_comment(body, response)
