@@ -127,6 +127,7 @@ module Lita
       end
 
       def act_on_pr_opened(body, response)
+        type = detect_type(body)
         puts "Detected that someone opened a #{type.tr('_', ' ')}."
         if type.nil?
           puts 'Neither pull request or issue detected, exiting...'
