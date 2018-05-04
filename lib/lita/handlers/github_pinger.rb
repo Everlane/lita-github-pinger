@@ -1,5 +1,7 @@
 module Lita
   module Handlers
+    RR_REDIS_KEY = 'lita-github-pinger:roundrobin'.freeze
+
     class GithubPinger < Handler
 
       ####
@@ -129,12 +131,10 @@ module Lita
 
         if config.enable_round_robin
           puts "round robin is enabled, selecting the next engineer.."
-          redis_key = 'lita-github-pinger:nextreviewer'
 
-          chosen_reviewer = redis.get(redis_key)
+          chosen_reviewer = redis.get(RR_REDIS_KEY)
           engineers_with_rr_enabled = config.engineers.values.select { |eng| eng[:enable_round_robin] }
 
-          # get the ball rolling with taylor
           if chosen_reviewer.nil?
             chosen_reviewer = engineers_with_rr_enabled[0][:usernames][:slack]
           end
@@ -150,7 +150,7 @@ module Lita
           puts "#{next_reviewer} determined as the next reviewer"
 
           puts "storing #{next_reviewer} in redis..."
-          redis.set(redis_key, next_reviewer)
+          redis.set(RR_REDIS_KEY, next_reviewer)
 
           url = body[type]['html_url']
 
