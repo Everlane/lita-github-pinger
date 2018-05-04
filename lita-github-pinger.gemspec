@@ -1,6 +1,6 @@
 Gem::Specification.new do |spec|
   spec.name          = "lita-github-pinger"
-  spec.version       = "0.6.6"
+  spec.version       = "0.7.0"
   spec.authors       = ["Taylor Lapeyre"]
   spec.email         = ["taylorlapeyre@gmail.com"]
   spec.description   = "A Lita handler that detects github comment notifications and regurgitates a ping to the correct slack username."
