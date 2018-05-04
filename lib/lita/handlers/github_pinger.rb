@@ -60,7 +60,7 @@ module Lita
           act_on_assign(body, response)
         end
 
-        if body["state"] && body["state"] == "opened"
+        if body["action"] && body["action"] == "opened"
           act_on_pr_opened(body, response)
         end
 
