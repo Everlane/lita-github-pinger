@@ -132,14 +132,12 @@ module Lita
           redis_key = 'lita-github-pinger:nextreviewer'
 
           chosen_reviewer = redis.get(redis_key)
+          engineers_with_rr_enabled = config.engineers.values.select { |eng| eng[:enable_round_robin] }
 
           # get the ball rolling with taylor
           if chosen_reviewer.nil?
-            redis.set(redis_key, 'taylor')
-            chosen_reviewer = 'taylor'
+            chosen_reviewer = engineers_with_rr_enabled[0][:usernames][:slack]
           end
-
-          engineers_with_rr_enabled = config.engineers.values.select { |eng| eng[:enable_round_robin] }
 
           current_reviewer_index = engineers_with_rr_enabled.find_index do |eng|
             eng[:usernames][:slack] == chosen_reviewer
