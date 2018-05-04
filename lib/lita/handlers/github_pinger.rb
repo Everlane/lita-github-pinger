@@ -129,21 +129,30 @@ module Lita
 
         if config.enable_round_robin
           puts "round robin is enabled, selecting the next engineer.."
-          next_reviewer_redis_key = 'lita-github-pinger:nexteng'
+          redis_key = 'lita-github-pinger:nextreviewer'
 
-          chosen_reviewer = redis.get(next_reviewer_redis_key)
+          chosen_reviewer = redis.get(redis_key)
 
-          next_reviewer_index = config.engineers.values.find_index do |eng|
-            eng[:enable_round_robin] && eng[:usernames][:slack] == chosen_reviewer
-          end + 1
+          # get the ball rolling with taylor
+          if chosen_reviewer.nil?
+            redis.set(redis_key, 'taylor')
+            chosen_reviewer = 'taylor'
+          end
 
-          next_reviewer = config.engineers.values[next_reviewer_index]
+          engineers_with_rr_enabled = config.engineers.values.select { |eng| eng[:enable_round_robin] }
+
+          current_reviewer_index = engineers_with_rr_enabled.find_index do |eng|
+            eng[:usernames][:slack] == chosen_reviewer
+          end
+
+          next_reviewer_index = (current_reviewer_index + 1) % engineers_with_rr_enabled.length
+          next_reviewer = engineers_with_rr_enabled[next_reviewer_index]
 
           puts "#{chosen_reviewer} determined as the reviewer."
           puts "#{next_reviewer} determined as the next reviewer"
 
           puts "storing #{next_reviewer} in redis..."
-          redis.set(next_reviewer_redis_key, next_reviewer)
+          redis.set(redis_key, next_reviewer)
 
           url = body[type]['html_url']
 
