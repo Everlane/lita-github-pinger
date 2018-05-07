@@ -164,6 +164,11 @@ module Lita
           puts "Sending DM to #{chosen_reviewer}..."
           send_dm(chosen_reviewer, message)
 
+          pr_owner = find_engineer(github: body["pull_request"]["user"]["login"])
+          assignment_message = "#{chosen_reviewer} has been notified via round-robin to review #{body["pull_request"]["html_url"]}"
+          puts "Notifying #{pr_owner[:usernames][:slack]} of assignment."
+          send_dm(pr_owner[:usernames][:slack], assignment_message)
+
           response
         end
       end
