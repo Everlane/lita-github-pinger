@@ -60,8 +60,8 @@ module Lita
           act_on_assign(body, response)
         end
 
-        if body["action"] && body["action"] == "opened"
-          act_on_pr_opened(body, response)
+        if body["action"] && body["action"] == "labeled"
+          act_on_pr_labeled(body, response)
         end
 
         if body["state"] && body["state"] == "success"
@@ -126,49 +126,53 @@ module Lita
         response
       end
 
-      def act_on_pr_opened(body, response)
+      def act_on_pr_labeled(body, response)
         type = detect_type(body)
-        puts "Detected that someone opened a #{type.tr('_', ' ')}."
+        puts "Detected that someone labeled a #{type.tr('_', ' ')}."
+
         if type.nil?
           puts 'Neither pull request or issue detected, exiting...'
+          return
+        end
+
+        if body["labels"].none? { |label| label.name.downcase.include?('review') }
+          puts 'Labels do not include a review label, exiting...'
           return
         end
 
         if config.enable_round_robin
           puts "round robin is enabled, selecting the next engineer.."
 
-          chosen_reviewer = redis.get(RR_REDIS_KEY)
-          engineers_with_rr_enabled = config.engineers.values.select { |eng| eng[:enable_round_robin] }
+          chosen_reviewer = get_next_round_robin_reviewer
 
-          if chosen_reviewer.nil?
-            chosen_reviewer = engineers_with_rr_enabled[0][:usernames][:slack]
+          pr_owner = find_engineer(github: body["pull_request"]["user"]["login"])
+          pr_owner = pr_owner[:usernames][:slack] unless pr_owner.nil?
+
+          if chosen_reviewer === pr_owner
+            update_next_round_robin_reviewer
+            chosen_reviewer = get_next_round_robin_reviewer
           end
-
-          current_reviewer_index = engineers_with_rr_enabled.find_index do |eng|
-            eng[:usernames][:slack] == chosen_reviewer
-          end
-
-          next_reviewer_index = (current_reviewer_index + 1) % engineers_with_rr_enabled.length
-          next_reviewer = engineers_with_rr_enabled[next_reviewer_index][:usernames][:slack]
 
           puts "#{chosen_reviewer} determined as the reviewer."
-          puts "#{next_reviewer} determined as the next reviewer"
-
-          puts "storing #{next_reviewer} in redis..."
-          redis.set(RR_REDIS_KEY, next_reviewer)
 
           url = body[type]['html_url']
 
-          message = "You're next in line to review a PR! Please review, or assign to an engineer with more context if you think you are unable to give a thorough review. \n#{url}"
+          message_for_reviewer = "You're next in line to review a PR! Please review, or assign to an engineer with more context if you think you are unable to give a thorough review. \n#{url}"
+          message_for_owner = "#{chosen_reviewer} has been notified via round-robin to review #{body["pull_request"]["html_url"]}"
 
           puts "Sending DM to #{chosen_reviewer}..."
           send_dm(chosen_reviewer, message)
 
-          pr_owner = find_engineer(github: body["pull_request"]["user"]["login"])
-          assignment_message = "#{chosen_reviewer} has been notified via round-robin to review #{body["pull_request"]["html_url"]}"
-          puts "Notifying #{pr_owner[:usernames][:slack]} of assignment."
-          send_dm(pr_owner[:usernames][:slack], assignment_message)
+          if pr_owner
+            puts "Notifying #{pr_owner} of assignment."
+            send_dm(pr_owner, assignment_message)
+          else
+            puts "Couldn't find a config for pr owner #{body["pull_request"]["user"]["login"]}. Make sure they are in the lita config!"
+            puts "Skipping notifying PR owner of RR assignment."
+          end
 
+          update_next_round_robin_reviewer
+          
           response
         end
       end
@@ -245,6 +249,31 @@ module Lita
         puts "GitHub Hook successfully processed."
 
         response
+      end
+
+      def get_next_round_robin_reviewer
+        engineers_with_rr_enabled = config.engineers.values.select { |eng| eng[:enable_round_robin] }
+        next_reviewer = redis.get(RR_REDIS_KEY)
+
+        if next_reviewer.nil?
+          next_reviewer = engineers_with_rr_enabled[0][:usernames][:slack]
+        end
+
+        next_reviewer
+      end
+
+      def update_next_round_robin_reviewer
+        engineers_with_rr_enabled = config.engineers.values.select { |eng| eng[:enable_round_robin] }
+        current_reviewer = get_next_round_robin_reviewer
+
+        current_reviewer_index = engineers_with_rr_enabled.find_index do |eng|
+          eng[:usernames][:slack] == current_reviewer
+        end
+
+        next_reviewer_index = (current_reviewer_index + 1) % engineers_with_rr_enabled.length
+        next_reviewer = engineers_with_rr_enabled[next_reviewer_index][:usernames][:slack]
+
+        redis.set(RR_REDIS_KEY, next_reviewer)
       end
 
       def alert_eng_pr(message)
