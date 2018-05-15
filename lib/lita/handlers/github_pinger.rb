@@ -135,6 +135,8 @@ module Lita
           return
         end
 
+        p body["pull_request"]
+
         if body["labels"].none? { |label| label.name.downcase.include?('review') }
           puts 'Labels do not include a review label, exiting...'
           return
