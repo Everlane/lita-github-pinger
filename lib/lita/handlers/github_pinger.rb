@@ -161,11 +161,11 @@ module Lita
           message_for_owner = "#{chosen_reviewer} has been notified via round-robin to review #{body["pull_request"]["html_url"]}"
 
           puts "Sending DM to #{chosen_reviewer}..."
-          send_dm(chosen_reviewer, message)
+          send_dm(chosen_reviewer, message_for_reviewer)
 
           if pr_owner
             puts "Notifying #{pr_owner} of assignment."
-            send_dm(pr_owner, assignment_message)
+            send_dm(pr_owner, message_for_owner)
           else
             puts "Couldn't find a config for pr owner #{body["pull_request"]["user"]["login"]}. Make sure they are in the lita config!"
             puts "Skipping notifying PR owner of RR assignment."
