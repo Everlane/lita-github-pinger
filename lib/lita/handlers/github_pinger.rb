@@ -34,12 +34,12 @@ module Lita
       #  - "off"
       #  default: "all_discussion"
       #
-      # :travis_preferences[:frequency] can be
+      # :status_preferences[:frequency] can be
       #  - "only_passes"
       #  - "only_failures"
       #  - "everything"
       #  - "off"
-      #  default: "all_discussion"
+      #  default: "everything"
       config :engineers, type: Hash, required: true
       config :enable_round_robin, types: [TrueClass, FalseClass]
 
@@ -77,12 +77,23 @@ module Lita
         commit_url = body["commit"]["html_url"]
         committer = find_engineer(github: body["commit"]["committer"]["login"])
 
-        puts "Detected a travis build failure for commit #{body["sha"]}"
-        message = ":x: Your commit failed some tests."
+        puts "Detected a status failure for commit #{body["sha"]}"
+        message = ":x: Your commit failed CI."
         message += "\n#{commit_url}"
 
-        return if ["off", "only_passes"].include?(committer[:travis_preferences][:frequency])
-        send_dm(committer[:usernames][:slack], message)
+        if committer
+          frequency = if committer[:travis_preferences]
+            committer[:travis_preferences][:frequency]
+          else
+            committer[:status_preferences][:frequency]
+          end
+
+          return if ["off", "only_passes"].include?(frequency)
+
+          send_dm(committer[:usernames][:slack], message)
+        else
+          puts "Could not find configuration for GitHub username " + body["commit"]["committer"]["login"]}
+        end
 
         response
       end
@@ -91,12 +102,23 @@ module Lita
         commit_url = body["commit"]["html_url"]
         committer = find_engineer(github: body["commit"]["committer"]["login"])
 
-        puts "Detected a travis build success for commit #{body["sha"]}"
-        message = ":white_check_mark: Your commit has passed its travis build."
+        puts "Detected a status success for commit #{body["sha"]}"
+        message = ":white_check_mark: Your commit has passed CI."
         message += "\n#{commit_url}"
 
-        return if ["off", "only_failures"].include?(committer[:travis_preferences][:frequency])
-        send_dm(committer[:usernames][:slack], message)
+        if committer
+          frequency = if committer[:travis_preferences]
+            committer[:travis_preferences][:frequency]
+          else
+            committer[:status_preferences][:frequency]
+          end
+
+          return if ["off", "only_failures"].include?(frequency)
+
+          send_dm(committer[:usernames][:slack], message)
+        else
+          puts "Could not find configuration for GitHub username " + body["commit"]["committer"]["login"]}
+        end
 
         response
       end

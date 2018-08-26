@@ -2,7 +2,7 @@
 
 This is a Lita handler for pinging you about github events that you should know about.
 
-In particular, it will ping you under four circumstances (right now):
+In particular, it can ping you under four circumstances (right now):
 
 1. Somebody has commented on your pull request
 2. Somebody has @mentioned you through a comment on a pull request
@@ -40,7 +40,7 @@ config.handlers.github_pinger.engineers = {
       frequency: "all_discussion",
       location: "dm"
     },
-    travis_preferences: { # I know, not everybody uses travis - this will still work.
+    status_preferences: {
       frequency: "only_failures"
     }
   },
