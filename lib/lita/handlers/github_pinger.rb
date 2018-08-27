@@ -156,15 +156,14 @@ module Lita
 
             if !should_notify
               puts "will not notify, preference for :github_preferences[:notify_about_review_requests] is not true"
-              return response
+            else
+              url = body['pull_request']['html_url']
+
+              message = "You've been asked to review a pull request:\n#{url}"
+
+              puts "Sending DM to #{engineer}..."
+              send_dm(engineer[:usernames][:slack], message)
             end
-
-            url = body['pull_request']['html_url']
-
-            message = "You've been asked to review a pull request:\n#{url}"
-
-            puts "Sending DM to #{engineer}..."
-            send_dm(engineer[:usernames][:slack], message)
           else
             puts "Could not find engineer #{reviewer['login']}"
           end
