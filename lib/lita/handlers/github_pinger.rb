@@ -98,7 +98,7 @@ module Lita
 
           send_dm(committer[:usernames][:slack], message)
         else
-          puts "Could not find configuration for GitHub username " + body["commit"]["committer"]["login"]}
+          puts "Could not find configuration for GitHub username " + body["commit"]["committer"]["login"]
         end
 
         response
@@ -123,7 +123,7 @@ module Lita
 
           send_dm(committer[:usernames][:slack], message)
         else
-          puts "Could not find configuration for GitHub username " + body["commit"]["committer"]["login"]}
+          puts "Could not find configuration for GitHub username " + body["commit"]["committer"]["login"]
         end
 
         response
