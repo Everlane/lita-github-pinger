@@ -111,13 +111,13 @@ module Lita
         type = detect_type(body)
 
         if type.nil?
-          puts 'Neither pull request or issue detected, exiting...'
+          puts "Neither pull request or issue detected, exiting..."
           return
         end
 
         puts "Detected that someone got assigned to a #{type.tr('_', ' ')}."
 
-        assignee_login = body[type]['assignee']['login']
+        assignee_login = body[type]["assignee"]["login"]
         assignee = find_engineer(github: assignee_login)
 
         puts "Looking up preferences..."
@@ -130,7 +130,7 @@ module Lita
 
         puts "#{assignee} determined as the assignee."
 
-        url = body[type]['html_url']
+        url = body[type]["html_url"]
 
         message = "*Heads up!* You've been assigned to review a #{type.tr('_', ' ')}:\n#{url}"
 
@@ -143,10 +143,10 @@ module Lita
       def act_on_review_requested(body, response)
         puts "Detected a review request."
 
-        reviewers = body['pull_request']['requested_reviewers']
+        reviewers = body["pull_request"]["requested_reviewers"]
 
         reviewers.each do |reviewer|
-          engineer = find_engineer(github: reviewer['login'])
+          engineer = find_engineer(github: reviewer["login"])
 
           if engineer
             puts "#{engineer} determined as a reviewer."
@@ -157,7 +157,7 @@ module Lita
             if !should_notify
               puts "will not notify, preference for :github_preferences[:notify_about_review_requests] is not true"
             else
-              url = body['pull_request']['html_url']
+              url = body["pull_request"]["html_url"]
 
               message = "You've been asked to review a pull request:\n#{url}"
 
@@ -165,7 +165,7 @@ module Lita
               send_dm(engineer[:usernames][:slack], message)
             end
           else
-            puts "Could not find engineer #{reviewer['login']}"
+            puts "Could not find engineer #{reviewer["login"]}"
           end
         end
 
@@ -177,12 +177,12 @@ module Lita
         puts "Detected that someone labeled a #{type.tr('_', ' ')}."
 
         if type.nil?
-          puts 'Neither pull request or issue detected, exiting...'
+          puts "Neither pull request or issue detected, exiting..."
           return
         end
 
         if body["pull_request"]["labels"].none? { |label| label["name"].downcase.include?('review') }
-          puts 'Labels do not include a review label, exiting...'
+          puts "Labels do not include a review label, exiting..."
           return
         end
 
@@ -201,7 +201,7 @@ module Lita
 
           puts "#{chosen_reviewer} determined as the reviewer."
 
-          url = body[type]['html_url']
+          url = body[type]["html_url"]
 
           message_for_reviewer = "You're next in line to review a PR! Please review, or assign to an engineer with more context if you think you are unable to give a thorough review. \n#{url}"
           message_for_owner = "#{chosen_reviewer} has been notified via round-robin to review #{body["pull_request"]["html_url"]}"
@@ -257,8 +257,8 @@ module Lita
 
           # get each @mentioned engineer in the comment
           mentions = comment
-            .split('@')[1..-1] # "a @b @c d" => ["b ", "c d"]
-            .map { |snip| snip.split(' ').first } # ["b ", "c d"] => ["b", "c"]
+            .split("@")[1..-1] # "a @b @c d" => ["b ", "c d"]
+            .map { |snip| snip.split(" ").first } # ["b ", "c d"] => ["b", "c"]
             .map { |name| name.gsub(/[^0-9a-z\-_]/i, '') }
 
           puts "Done. Got #{mentions}"
@@ -356,10 +356,10 @@ module Lita
       end
 
       def detect_type(body)
-        if body['pull_request']
-          'pull_request'
-        elsif body['issue']
-          'issue'
+        if body["pull_request"]
+          "pull_request"
+        elsif body["issue"]
+          "issue"
         end
       end
     end
