@@ -16,7 +16,9 @@ module Lita
       #   },
       #   :github_preferences =>  {
       #     :frequency     => "only_mentions",
-      #     :ping_location => "dm"
+      #     :ping_location => "dm",
+      #     :notify_about_review_requests: true,
+      #     :notify_about_assignment: true,
       #   },
       #   :travis_preferences => {
       #     :frequency => "only_failures"
@@ -58,6 +60,10 @@ module Lita
 
         if body["action"] && body["action"] == "assigned"
           act_on_assign(body, response)
+        end
+
+        if body["action"] && body["action"] == "review_requested"
+          act_on_review_requested(body, response)
         end
 
         if body["action"] && body["action"] == "labeled"
@@ -114,6 +120,14 @@ module Lita
         assignee_login = body[type]['assignee']['login']
         assignee = find_engineer(github: assignee_login)
 
+        puts "Looking up preferences..."
+        should_notify = assignee[:github_preferences][:notify_about_assignment]
+
+        if !should_notify
+          puts "will not notify, preference for :github_preferences[:notify_about_assignment] is not true"
+          return response
+        end
+
         puts "#{assignee} determined as the assignee."
 
         url = body[type]['html_url']
@@ -122,6 +136,39 @@ module Lita
 
         puts "Sending DM to #{assignee}..."
         send_dm(assignee[:usernames][:slack], message)
+
+        response
+      end
+
+      def act_on_review_requested(body, response)
+        puts "Detected a review request."
+
+        reviewers = body['pull_request']['requested_reviewers']
+
+        reviewers.each do |reviewer|
+          engineer = find_engineer(github: reviewer['login'])
+
+          if engineer
+            puts "#{engineer} determined as a reviewer."
+
+            puts "Looking up preferences..."
+            should_notify = engineer[:github_preferences][:notify_about_review_requests]
+
+            if !should_notify
+              puts "will not notify, preference for :github_preferences[:notify_about_review_requests] is not true"
+              return response
+            end
+
+            url = body['pull_request']['html_url']
+
+            message = "You've been asked to review a pull request:\n#{url}"
+
+            puts "Sending DM to #{engineer}..."
+            send_dm(engineer[:usernames][:slack], message)
+          else
+            puts "Could not find engineer #{reviewer['login']}"
+          end
+        end
 
         response
       end

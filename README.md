@@ -7,7 +7,8 @@ In particular, it will ping you under four circumstances (right now):
 1. Somebody has commented on your pull request
 2. Somebody has @mentioned you through a comment on a pull request
 3. Somebody has assigned you to a pull request
-4. The status of your pull request was set to "failing"
+4. Somebody has requested a pull request review from you
+5. The status of your pull request was set to "failing"
 
 ## Installation
 
@@ -38,6 +39,8 @@ config.handlers.github_pinger.engineers = {
     },
     github_preferences: {
       frequency: "all_discussion",
+      notify_about_assignment: true,
+      notify_about_review_requests: true,
       location: "dm"
     },
     travis_preferences: { # I know, not everybody uses travis - this will still work.
