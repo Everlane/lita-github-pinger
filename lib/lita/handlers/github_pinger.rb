@@ -54,7 +54,7 @@ module Lita
         puts body["action"]
         puts body["state"]
 
-        if body["comment"]
+        if body["comment"] && body["action"] == "created"
           act_on_comment(body, response)
         end
 
