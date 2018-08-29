@@ -154,7 +154,7 @@ module Lita
 
         url = body[type]["html_url"]
 
-        message = "*Heads up!* You've been assigned to review a #{type.tr('_', ' ')}:\n#{url}"
+        message = "*Heads up!* You've been assigned to a #{type.tr('_', ' ')}:\n#{url}"
 
         puts "Sending DM to #{assignee}..."
         send_dm(assignee[:usernames][:slack], message)
