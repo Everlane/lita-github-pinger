@@ -165,6 +165,8 @@ module Lita
       def act_on_review_requested(body, response)
         puts "Detected a review request."
 
+        p body["pull_request"]
+
         reviewer = body["pull_request"]["requested_reviewer"]
 
         engineer = find_engineer(github: reviewer["login"])
