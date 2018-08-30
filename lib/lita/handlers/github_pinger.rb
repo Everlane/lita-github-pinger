@@ -165,30 +165,28 @@ module Lita
       def act_on_review_requested(body, response)
         puts "Detected a review request."
 
-        reviewers = body["pull_request"]["requested_reviewers"]
+        reviewer = body["pull_request"]["requested_reviewer"]
 
-        reviewers.each do |reviewer|
-          engineer = find_engineer(github: reviewer["login"])
+        engineer = find_engineer(github: reviewer["login"])
 
-          if engineer
-            puts "#{engineer} determined as a reviewer."
+        if engineer
+          puts "#{engineer} determined as a reviewer."
 
-            puts "Looking up preferences..."
-            should_notify = engineer[:github_preferences][:notify_about_review_requests]
+          puts "Looking up preferences..."
+          should_notify = engineer[:github_preferences][:notify_about_review_requests]
 
-            if !should_notify
-              puts "will not notify, preference for :github_preferences[:notify_about_review_requests] is not true"
-            else
-              url = body["pull_request"]["html_url"]
-
-              message = "You've been asked to review a pull request:\n#{url}"
-
-              puts "Sending DM to #{engineer}..."
-              send_dm(engineer[:usernames][:slack], message)
-            end
+          if !should_notify
+            puts "will not notify, preference for :github_preferences[:notify_about_review_requests] is not true"
           else
-            puts "Could not find engineer #{reviewer["login"]}"
+            url = body["pull_request"]["html_url"]
+
+            message = "You've been asked to review a pull request:\n#{url}"
+
+            puts "Sending DM to #{engineer}..."
+            send_dm(engineer[:usernames][:slack], message)
           end
+        else
+          puts "Could not find engineer #{reviewer["login"]}"
         end
 
         response
