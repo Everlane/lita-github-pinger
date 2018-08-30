@@ -1,6 +1,9 @@
+require 'json'
+
 module Lita
   module Handlers
     RR_REDIS_KEY = 'lita-github-pinger:roundrobin'.freeze
+    REVIEW_REDIS_KEY = 'lita-github-pinger:reviewrequests'.freeze
 
     class GithubPinger < Handler
 
@@ -165,13 +168,33 @@ module Lita
       def act_on_review_requested(body, response)
         puts "Detected a review request."
 
-        p body["pull_request"]
+        puts "looking at previously notified reviewers for this PR"
 
-        reviewer = body["pull_request"]["requested_reviewer"]
+        pr = body["pull_request"]
 
-        engineer = find_engineer(github: reviewer["login"])
+        url = pr["html_url"]
 
-        if engineer
+        notified_engineers = redis.get(REVIEW_REDIS_KEY + ":" + url)
+
+        notified_engineers = if notified_engineers
+          JSON.parse(notified_engineers)
+        else
+          []
+        end
+
+        pr["requested_reviewers"].each do |reviewer|
+          engineer = find_engineer(github: reviewer["login"])
+
+          if !engineer
+            puts "Could not find engineer #{reviewer["login"]}"
+            next
+          end
+
+          if notified_engineers.include?(reviewer["login"])
+            puts "#{reviewer["login"]} has already been notified to review PR, skipping..."
+            next
+          end
+
           puts "#{engineer} determined as a reviewer."
 
           puts "Looking up preferences..."
@@ -180,16 +203,13 @@ module Lita
           if !should_notify
             puts "will not notify, preference for :github_preferences[:notify_about_review_requests] is not true"
           else
-            url = body["pull_request"]["html_url"]
-
             message = "You've been asked to review a pull request:\n#{url}"
-
-            puts "Sending DM to #{engineer}..."
             send_dm(engineer[:usernames][:slack], message)
+            notified_engineers.push(reviewer["login"])
           end
-        else
-          puts "Could not find engineer #{reviewer["login"]}"
         end
+
+        redis.set(REVIEW_REDIS_KEY + ":" + url, notified_engineers.to_json)
 
         response
       end
