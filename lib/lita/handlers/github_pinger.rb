@@ -57,6 +57,10 @@ module Lita
         puts body["action"]
         puts body["state"]
 
+        if body['deployment_status']
+          act_on_deployment_status(body, response)
+        end
+
         if body["comment"] && body["action"] == "created"
           act_on_comment(body, response)
         end
@@ -268,6 +272,29 @@ module Lita
           update_next_round_robin_reviewer
           
           response
+        end
+      end
+
+      def act_on_deployment_status(body, response)
+        deploy_ref    = body['deployment']['ref']
+        deploy_env    = body['deployment']['environment']
+        deploy_status = body['deployment_status']['state']
+
+        puts "Deployment status update for #{deploy_ref} to #{deploy_env}: #{deploy_status}"
+
+        deploy_owner = find_engineer github: body['deployment']['creator']['login']
+
+        if !deploy_owner
+          puts 'Couldn’t find owner of deploy'
+          return
+        end
+
+        owner_username = deploy_owner[:usernames][:slack]
+
+        if deploy_status == 'success'
+          send_dm owner_username, "Your deployment of #{deploy_ref} to #{deploy_env} is complete!"
+        elsif ['failure', 'error'].include? deploy_status
+          send_dm owner_username, "Your deployment of #{deploy_ref} to #{deploy_env} failed."
         end
       end
 
