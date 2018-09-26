@@ -279,8 +279,17 @@ module Lita
         deploy_ref = body['deployment']['ref']
         deploy_env = body['deployment']['environment']
 
+        puts "Deployment status update for #{deploy_ref} to #{deploy_env}"
+
         deploy_owner = find_engineer github: body['deployment']['creator']['login']
         deploy_owner = deploy_owner[:usernames][:slack]
+
+        if !deploy_owner
+          puts 'Couldn’t find owner of deploy'
+          return
+        else
+          puts "Notifying #{deploy_owner} about deploy"
+        end
 
         deploy_status = body['deployment_status']['state']
 
