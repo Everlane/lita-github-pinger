@@ -245,8 +245,14 @@ module Lita
 
           url = body[type]["html_url"]
 
-          message_for_reviewer = "You're next in line to review a PR! Please review, or assign to an engineer with more context if you think you are unable to give a thorough review. \n#{url}"
-          message_for_owner = "#{chosen_reviewer} has been notified via round-robin to review #{body["pull_request"]["html_url"]}"
+          message_for_reviewer = <<-eos
+            You’re next in line to look at a PR! There’s no obligation to submit a review, but take a look and familiarize yourself with the code as time allows.
+            If the PR looks particularly interesting or well-authored, nominate it as a PR of the Week.
+          eos
+          message_for_owner = <<-eos
+            #{chosen_reviewer} has been selected via round-robin to examine #{body["pull_request"]["html_url"]}.
+            Round-robin assignment is not an obligation to submit a review. Seek reviewers as appropriate.
+          eos
 
           puts "Sending DM to #{chosen_reviewer}..."
           send_dm(chosen_reviewer, message_for_reviewer)
