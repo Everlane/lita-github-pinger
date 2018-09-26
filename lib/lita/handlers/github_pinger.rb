@@ -273,7 +273,7 @@ module Lita
         deploy_ref = body['deployment']['ref']
         deploy_env = body['deployment']['environment']
 
-        deploy_owner = find_engineer github: body['deployment']['user']['login']
+        deploy_owner = find_engineer github: body['deployment']['creator']['login']
 
         deploy_status = body['deployment_status']['state']
 
