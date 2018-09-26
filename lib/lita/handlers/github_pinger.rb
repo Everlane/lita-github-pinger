@@ -273,16 +273,18 @@ module Lita
         deploy_ref = body['deployment']['ref']
         deploy_env = body['deployment']['environment']
 
-        deploy_owner = find_engineer github: body['deployment']['creator']['login']
+        puts body['deployment']
+
+        # deploy_owner = find_engineer github: body['deployment']['creator']['login']
 
         deploy_status = body['deployment_status']['state']
 
-        puts deploy_ref, deploy_env, deploy_owner, deploy_status
+        puts deploy_ref, deploy_env, deploy_status
 
         if deploy_status == 'success'
-          send_dm deploy_owner, "Your deployment of #{deploy_ref} to #{deploy_env} is complete!"
+          # send_dm deploy_owner, "Your deployment of #{deploy_ref} to #{deploy_env} is complete!"
         elsif ['failure', 'error'].incldue? deploy_status
-          send_dm deploy_owner, "Your deployment of #{deploy_ref} to #{deploy_env} failed."
+          # send_dm deploy_owner, "Your deployment of #{deploy_ref} to #{deploy_env} failed."
         end
       end
 
