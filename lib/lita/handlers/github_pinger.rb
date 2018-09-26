@@ -57,7 +57,7 @@ module Lita
         puts body["action"]
         puts body["state"]
 
-        if body['deployment'] && body['deployment_status']
+        if body['deployment_status']
           act_on_deployment_status(body, response)
         end
 
@@ -276,27 +276,25 @@ module Lita
       end
 
       def act_on_deployment_status(body, response)
-        deploy_ref = body['deployment']['ref']
-        deploy_env = body['deployment']['environment']
+        deploy_ref    = body['deployment']['ref']
+        deploy_env    = body['deployment']['environment']
+        deploy_status = body['deployment_status']['state']
 
-        puts "Deployment status update for #{deploy_ref} to #{deploy_env}"
+        puts "Deployment status update for #{deploy_ref} to #{deploy_env}: #{deploy_status}"
 
         deploy_owner = find_engineer github: body['deployment']['creator']['login']
-        deploy_owner = deploy_owner[:usernames][:slack]
 
         if !deploy_owner
           puts 'Couldn’t find owner of deploy'
           return
-        else
-          puts "Notifying #{deploy_owner} about deploy"
         end
 
-        deploy_status = body['deployment_status']['state']
+        owner_username = deploy_owner[:usernames][:slack]
 
         if deploy_status == 'success'
-          send_dm deploy_owner, "Your deployment of #{deploy_ref} to #{deploy_env} is complete!"
+          send_dm owner_username, "Your deployment of #{deploy_ref} to #{deploy_env} is complete!"
         elsif ['failure', 'error'].include? deploy_status
-          send_dm deploy_owner, "Your deployment of #{deploy_ref} to #{deploy_env} failed."
+          send_dm owner_username, "Your deployment of #{deploy_ref} to #{deploy_env} failed."
         end
       end
 
