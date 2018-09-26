@@ -274,7 +274,7 @@ module Lita
         deploy_env = body['deployment']['environment']
 
         deploy_owner = find_engineer github: body['deployment']['creator']['login']
-        deploy_owner = deploy_owner['usernames']['slack']
+        deploy_owner = deploy_owner[:usernames][:slack]
 
         deploy_status = body['deployment_status']['state']
 
