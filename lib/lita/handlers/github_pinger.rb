@@ -277,6 +277,8 @@ module Lita
 
         deploy_status = body['deployment_status']['state']
 
+        puts deploy_ref, deploy_env, deploy_owner, deploy_status
+
         if deploy_status == 'success'
           send_dm deploy_owner, "Your deployment of #{deploy_ref} to #{deploy_env} is complete!"
         elsif ['failure', 'error'].incldue? deploy_status
