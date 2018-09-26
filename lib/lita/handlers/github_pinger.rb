@@ -57,12 +57,6 @@ module Lita
         puts body["action"]
         puts body["state"]
 
-        puts body
-
-        if body['deployment'] || body['deployment_status']
-          puts body
-        end
-
         if body['deployment'] && body['deployment_status']
           act_on_deployment_status(body, response)
         end
@@ -281,16 +275,16 @@ module Lita
 
         puts body['deployment']
 
-        # deploy_owner = find_engineer github: body['deployment']['creator']['login']
+        deploy_owner = find_engineer github: body['deployment']['creator']['login']
 
         deploy_status = body['deployment_status']['state']
 
         puts deploy_ref, deploy_env, deploy_status
 
         if deploy_status == 'success'
-          # send_dm deploy_owner, "Your deployment of #{deploy_ref} to #{deploy_env} is complete!"
+          send_dm deploy_owner, "Your deployment of #{deploy_ref} to #{deploy_env} is complete!"
         elsif ['failure', 'error'].incldue? deploy_status
-          # send_dm deploy_owner, "Your deployment of #{deploy_ref} to #{deploy_env} failed."
+          send_dm deploy_owner, "Your deployment of #{deploy_ref} to #{deploy_env} failed."
         end
       end
 
