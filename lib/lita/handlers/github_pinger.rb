@@ -57,6 +57,8 @@ module Lita
         puts body["action"]
         puts body["state"]
 
+        puts body
+
         if body['deployment'] || body['deployment_status']
           puts body
         end
