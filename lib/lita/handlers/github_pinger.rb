@@ -276,24 +276,27 @@ module Lita
       end
 
       def act_on_deployment_status(body, response)
+        repo_name     = body['repository']['name']
         deploy_ref    = body['deployment']['ref']
         deploy_env    = body['deployment']['environment']
         deploy_sha    = body['deployment']['sha']
         deploy_status = body['deployment_status']['state']
 
-        puts "Deployment status update for #{deploy_ref} to #{deploy_env}: #{deploy_status}"
+        deploy_name = "#{repo_name} / #{deploy_ref} / #{deploy_env}"
+
+        puts "Deployment status update for #{deploy_name}: #{deploy_status}"
 
         # We sometimes see a combination of ref and env that works out to [sha, branch]
         # Let’s only worry about *real* [ref, env] pairs
         if deploy_sha.start_with? deploy_ref
-          puts "Duplicate status update (#{deploy_ref}, #{deploy_env})"
+          puts "Duplicate status update (#{deploy_name})"
           return
         end
 
         deploy_owner = find_engineer github: body['deployment']['creator']['login']
 
         if !deploy_owner
-          puts 'Couldn’t find owner of deploy'
+          puts "Couldn’t find owner of deploy (#{deploy_name})"
           return
         end
 
