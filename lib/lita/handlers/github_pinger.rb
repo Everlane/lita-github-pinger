@@ -250,7 +250,8 @@ module Lita
           url = body[type]["html_url"]
 
           message_for_reviewer = <<~eos
-            You’re next in line to look at a PR! There’s no obligation to submit a review, but take a look and familiarize yourself with the code as time allows.
+            You’re next in line to look at a PR: #{body["pull_request"]["html_url"]}
+            There’s no obligation to submit a review, but take a look and familiarize yourself with the code as time allows.
             If the PR looks particularly interesting or well-authored, nominate it as a PR of the Week.
           eos
           message_for_owner = <<~eos
