@@ -61,6 +61,10 @@ module Lita
         end
 
         case body['action']
+        when /created/
+          if body['comment'] && body['comment']['body'].match?(/release_slack_notify/)
+            act_on_release_comment(body, response)
+          end
         when /review_requested/
           puts "review_requested: #{username}"
           act_on_review_requested(body, response)
@@ -87,6 +91,28 @@ module Lita
             puts "unknown event! #{body['action']}"
             puts "body: #{body}"
           end
+        end
+      end
+
+      def act_on_release_comment(body, response)
+        comment = body['comment']['body']
+        engineers_to_ping = []
+        if comment.include?("@")
+          mentions = comment
+            .split('@')[1..-1]
+            .map { |snip| snip.split(' ').first }
+            .map { |name| name.gsub(/[^0-9a-z\-_]/i, '') }
+
+          mentioned_engineers = mentions.map { |username| find_engineer(github: username) }
+          engineers_to_ping = engineers_to_ping.concat(mentioned_engineers).uniq.compact
+        end
+
+        puts "Pinging engineers: #{engineers_to_ping}."
+        engineers_to_ping.each do |engineer|
+          message = "*Heads up!* New release candidate has been cut. Please verify your changes on *#{body['repository']['name']}*\n"
+          message += "[#{body['repository']['name']}]#{body['issue']['title']}\n"
+          message += "#{body['issue']['url']}"
+          send_dm(engineer[:usernames][:slack], message)
         end
       end
 
